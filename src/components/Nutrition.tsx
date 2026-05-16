@@ -29,7 +29,7 @@ export function Nutrition({ data, onAddMeal }: { data: AppData; onAddMeal: (meal
       <div className="grid three">
         <Card><Stat label="Proteína" value={`${today.protein}/${today.proteinTarget} g`} hint="objetivo base" /><Meter value={today.protein} max={today.proteinTarget} /></Card>
         <Card><Stat label="Nutrition Score" value={`${today.score}/100`} hint="proteína + creatina + post" /><Meter value={today.score} /></Card>
-        <Card><Stat label="Creatina" value={today.creatine ? 'Hecha' : 'Pendiente'} hint="7 g/día" /><button className="secondaryButton full" onClick={addCreatine}>Marcar creatina</button></Card>
+        <Card><Stat label="Creatina" value={today.creatine ? 'Hecha' : 'Pendiente'} hint="7 g/día" /><button className="btn btn-secondary full" onClick={addCreatine}>Marcar creatina</button></Card>
       </div>
       <Card>
         <h3>Comidas rápidas</h3>
@@ -44,7 +44,7 @@ export function Nutrition({ data, onAddMeal }: { data: AppData; onAddMeal: (meal
             <label>Nombre <input value={customName} onChange={(e) => setCustomName(e.target.value)} /></label>
             <label>Proteína <input type="number" value={customProtein} onChange={(e) => setCustomProtein(Number(e.target.value))} /></label>
           </div>
-          <button className="secondaryButton" onClick={addCustom}>Añadir comida</button>
+          <button className="btn btn-secondary" onClick={addCustom}>Añadir comida</button>
         </Card>
         <Card>
           <h3>Hoy</h3>

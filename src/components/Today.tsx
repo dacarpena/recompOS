@@ -54,7 +54,7 @@ export function Today({ data, onSaveCheckin, onStartSession }: Props) {
             <Pill tone="purple">Score {rec.score}</Pill>
           </div>
         </div>
-        <button className="primaryButton" onClick={() => onStartSession(rec.type)}>Empezar</button>
+        <button className="btn btn-primary" onClick={() => onStartSession(rec.type)}>Empezar</button>
       </Card>
 
       <div className="grid three">

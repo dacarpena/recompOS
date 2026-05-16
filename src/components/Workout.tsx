@@ -58,7 +58,7 @@ export function Workout({ data, initialType = 'A_PUSH', onSaveSession }: Props) 
             <p className="muted">{template.purpose}</p>
           </div>
           <div className="row wrap">
-            {TEMPLATES.map((t) => <button key={t.id} className={`tabButton ${t.id === type ? 'active' : ''}`} onClick={() => setType(t.id)}>{t.short}</button>)}
+            {TEMPLATES.map((t) => <button key={t.id} className={`btn btn-ghost tabButton ${t.id === type ? 'active' : ''}`} onClick={() => setType(t.id)}>{t.short}</button>)}
           </div>
         </div>
       </Card>
@@ -79,7 +79,7 @@ export function Workout({ data, initialType = 'A_PUSH', onSaveSession }: Props) 
               <strong>{sets.length} series registradas</strong>
               {volumeSummary.length ? volumeSummary.map(([m, v]) => <span key={m}>{m}: {v.toFixed(1)} set equiv.</span>) : <span>Sin volumen todavía.</span>}
             </div>
-            <button className="primaryButton full" onClick={save} disabled={!sets.length}>Guardar sesión</button>
+            <button className="btn btn-primary full" onClick={save} disabled={!sets.length}>Guardar sesión</button>
           </Card>
           <Card>
             <h3>Reglas del día</h3>
@@ -143,7 +143,7 @@ function ExerciseLogger({ exerciseId, setsTarget, data, onAdd }: { exerciseId: s
         <label>Lumbar <input type="number" min="0" max="10" value={draft.lumbarPain} onChange={(e) => setDraft({ ...draft, lumbarPain: Number(e.target.value) })} /></label>
       </div>
       <label className="check danger"><input type="checkbox" checked={draft.rightWeakness} onChange={(e) => setDraft({ ...draft, rightWeakness: e.target.checked })} /> Pérdida de fuerza derecha</label>
-      <button className="secondaryButton" onClick={add}>Añadir serie</button>
+      <button className="btn btn-secondary" onClick={add}>Añadir serie</button>
       {localSets.length ? <div className="setHistory">{localSets.map((s, i) => <span key={s.id}>S{i+1}: {s.weight}kg × {s.reps} · RIR {s.rir}</span>)}</div> : <Empty title="Sin series" body="Añade la primera serie cuando termines." />}
     </Card>
   );

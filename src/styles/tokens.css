@@ -1,0 +1,39 @@
+:root {
+  /* Spacing */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+
+  /* Radius */
+  --radius-sm: 0.75rem;
+  --radius-md: 1rem;
+  --radius-lg: 1.25rem;
+  --radius-xl: 1.5rem;
+  --radius-pill: 999px;
+
+  /* Typography */
+  --font-family-base: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif;
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-md: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.5rem;
+
+  /* Elevation */
+  --elev-1: 0 10px 30px rgba(0, 0, 0, 0.22);
+  --elev-2: 0 18px 45px rgba(0, 0, 0, 0.3);
+  --elev-3: 0 24px 80px rgba(0, 0, 0, 0.35);
+
+  /* Semantic states */
+  --state-success-bg: rgba(52, 211, 153, 0.1);
+  --state-success-border: rgba(52, 211, 153, 0.35);
+  --state-warning-bg: rgba(251, 191, 36, 0.1);
+  --state-warning-border: rgba(251, 191, 36, 0.35);
+  --state-danger-bg: rgba(251, 113, 133, 0.1);
+  --state-danger-border: rgba(251, 113, 133, 0.35);
+  --state-info-bg: rgba(85, 167, 255, 0.1);
+  --state-info-border: rgba(85, 167, 255, 0.35);
+}
