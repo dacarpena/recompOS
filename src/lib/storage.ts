@@ -11,6 +11,18 @@ export function getLegacyKey(): string {
   return LEGACY_KEY;
 }
 
+export function onboardingKeyForUser(userId: string): string {
+  return `${keyForUser(userId)}:onboarding-completed`;
+}
+
+export function readOnboardingCompleted(userId: string): boolean {
+  return localStorage.getItem(onboardingKeyForUser(userId)) === '1';
+}
+
+export function saveOnboardingCompleted(userId: string, completed: boolean) {
+  localStorage.setItem(onboardingKeyForUser(userId), completed ? '1' : '0');
+}
+
 function initialData(): AppData {
   const today = dateKey();
   return {

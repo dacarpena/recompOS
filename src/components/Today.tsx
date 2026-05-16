@@ -2,7 +2,7 @@ import { AppData, DailyCheckin, Traffic } from '../types';
 import { BLOCKED_EXERCISES, MUSCLES } from '../data/seed';
 import { latestCheckin, muscleClocks, nutritionToday, readinessScore, recommendSession, rollingVolume } from '../lib/engines';
 import { dateKey, fmtHours, uid } from '../lib/format';
-import { Card, Meter, Pill, SectionHeader, Stat, TrafficDot } from './UI';
+import { Card, ExplainTooltip, Meter, Pill, SectionHeader, Stat, TrafficDot } from './UI';
 
 type Props = {
   data: AppData;
@@ -58,10 +58,19 @@ export function Today({ data, onSaveCheckin, onStartSession }: Props) {
       </Card>
 
       <div className="grid three">
-        <Card><Stat label="Readiness" value={`${readiness}/100`} hint="Sueño + energía + articulaciones" /><Meter value={readiness} /></Card>
-        <Card><Stat label="Proteína hoy" value={`${nutrition.protein}/${nutrition.proteinTarget} g`} hint={`Nutrition Score ${nutrition.score}/100`} /><Meter value={nutrition.protein} max={nutrition.proteinTarget} /></Card>
+        <Card><Stat label={<><span>Readiness</span> <ExplainTooltip text="Capacidad global del día para tolerar entrenamiento de calidad. Combina sueño, energía y dolor articular." /></>} value={`${readiness}/100`} hint="Sueño + energía + articulaciones" /><Meter value={readiness} /></Card>
+        <Card><Stat label="Proteína hoy" value={`${nutrition.protein}/${nutrition.proteinTarget} g`} hint={<><span>Score nutricional {nutrition.score}/100</span> <ExplainTooltip text="El score nutricional resume adherencia a proteína, calidad alimentaria y consistencia diaria." /></>} /><Meter value={nutrition.protein} max={nutrition.proteinTarget} /></Card>
         <Card><Stat label="Hombro derecho" value={<><TrafficDot status={checkin?.shoulderStatus ?? 'yellow'} /> {checkin?.rightWeakness ? 'Bloqueado' : checkin?.shoulderStatus ?? 'amarillo'}</>} hint={checkin?.rightWeakness ? 'Pérdida de fuerza marcada' : 'Shoulder Guardian activo'} /></Card>
       </div>
+
+      <Card>
+        <h3>Cómo usar hoy</h3>
+        <div className="list">
+          <div className="listItem"><strong>1) Check-in en 60s</strong><span>Actualiza sueño, energía y dolor antes de decidir carga.</span></div>
+          <div className="listItem"><strong>2) Decide por readiness + bloqueos</strong><span>Si readiness baja o hay dolor alto, prioriza técnica, ROM completo y RIR más alto.</span></div>
+          <div className="listItem"><strong>3) Ejecuta y registra cada set</strong><span>Si técnica/ROM caen, reduce peso 5-10% y busca series útiles, no ego reps.</span></div>
+        </div>
+      </Card>
 
       <Card>
         <h3>Check-in rápido</h3>
@@ -90,7 +99,7 @@ export function Today({ data, onSaveCheckin, onStartSession }: Props) {
               const c = clocks.find((x) => x.muscleId === id)!;
               const v = vols.find((x) => x.muscleId === id)!;
               return <div className="listItem" key={id}>
-                <div><strong>{m.icon} {m.name}</strong><span>{v.hardSets}/{m.targetSets10d[0]}-{m.targetSets10d[1]} series útiles · último fuerte {fmtHours(c.hoursSinceHard)}</span></div>
+                <div><strong>{m.icon} {m.name}</strong><span>{v.hardSets}/{m.targetSets10d[0]}-{m.targetSets10d[1]} series útiles <ExplainTooltip text="Volumen útil = series con esfuerzo real y técnica válida que sí estimulan hipertrofia." /> · último fuerte {fmtHours(c.hoursSinceHard)}</span></div>
                 <Pill tone={c.status === 'green' ? 'green' : c.status === 'yellow' ? 'yellow' : 'red'}>{c.status === 'green' ? 'listo' : c.status === 'yellow' ? `en ${fmtHours(c.readyInHours)}` : 'bloqueado'}</Pill>
               </div>;
             })}

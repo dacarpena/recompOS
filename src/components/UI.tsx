@@ -27,8 +27,12 @@ export function Empty({ title, body }: { title: string; body: string }) {
   return <div className="empty"><strong>{title}</strong><span>{body}</span></div>;
 }
 
-export function Stat({ label, value, hint }: { label: string; value: React.ReactNode; hint?: string }) {
+export function Stat({ label, value, hint }: { label: React.ReactNode; value: React.ReactNode; hint?: React.ReactNode }) {
   return <div className="stat"><span>{label}</span><strong>{value}</strong>{hint && <small>{hint}</small>}</div>;
+}
+
+export function ExplainTooltip({ text }: { text: string }) {
+  return <span className="explainTooltip" title={text} aria-label={text}>¿Qué significa?</span>;
 }
 
 export function SectionHeader({ eyebrow, title, body }: { eyebrow?: string; title: string; body?: string }) {
