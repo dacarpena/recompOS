@@ -1,7 +1,17 @@
 import { AppData, BodyMetric, DailyCheckin, MealLog, WorkoutSession } from '../types';
 import { dateKey, uid } from './format';
+import { apiData, ApiSession } from './api';
 
 const LEGACY_KEY = 'recomp-os-web-v1';
+const QUEUE_KEY = 'recomp-os-sync-queue-v1';
+
+export type SyncState = 'synced' | 'pending' | 'error';
+
+export interface SyncQueueItem {
+  userId: string;
+  data: AppData;
+  updatedAt: string;
+}
 
 export function keyForUser(userId: string): string {
   return `${LEGACY_KEY}:${userId}`;
@@ -55,6 +65,62 @@ export function loadData(userId: string): AppData {
 export function saveData(userId: string, data: AppData) {
   const payload = { ...data, updatedAt: new Date().toISOString() };
   localStorage.setItem(keyForUser(userId), JSON.stringify(payload));
+}
+
+function loadQueue(): SyncQueueItem[] {
+  const raw = localStorage.getItem(QUEUE_KEY);
+  if (!raw) return [];
+  try { return JSON.parse(raw) as SyncQueueItem[]; } catch { return []; }
+}
+
+function saveQueue(queue: SyncQueueItem[]) {
+  localStorage.setItem(QUEUE_KEY, JSON.stringify(queue));
+}
+
+export function enqueueOfflineChange(userId: string, data: AppData) {
+  const queue = loadQueue().filter((i) => i.userId !== userId);
+  queue.push({ userId, data, updatedAt: data.updatedAt });
+  saveQueue(queue);
+}
+
+export function hasPendingSync(userId: string): boolean {
+  return loadQueue().some((i) => i.userId === userId);
+}
+
+export async function syncUserData(userId: string): Promise<{ data: AppData; state: SyncState }> {
+  const local = loadData(userId);
+  const session: ApiSession = { userId, token: `local-${userId}` };
+  const remote = await apiData(session);
+
+  let resolved = local;
+  if (!remote) {
+    await apiData(session, local);
+  } else {
+    // resolución de conflictos básica por timestamp (updatedAt más reciente gana)
+    resolved = new Date(local.updatedAt).getTime() >= new Date(remote.updatedAt).getTime() ? local : remote;
+    await apiData(session, resolved);
+  }
+
+  saveData(userId, resolved);
+
+  try {
+    const queue = loadQueue();
+    const pending = queue.find((q) => q.userId === userId);
+    if (pending) {
+      const remoteNow = await apiData(session);
+      const merged = remoteNow && new Date(remoteNow.updatedAt).getTime() > new Date(pending.updatedAt).getTime()
+        ? remoteNow
+        : pending.data;
+      await apiData(session, merged);
+      saveData(userId, merged);
+      saveQueue(queue.filter((q) => q.userId !== userId));
+      return { data: merged, state: 'synced' };
+    }
+    return { data: resolved, state: 'synced' };
+  } catch {
+    enqueueOfflineChange(userId, local);
+    return { data: local, state: 'error' };
+  }
 }
 
 export function exportData(userId: string, data: AppData) {
