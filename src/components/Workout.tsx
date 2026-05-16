@@ -3,7 +3,7 @@ import { AppData, SessionType, SetLog, WorkoutSession } from '../types';
 import { EXERCISES, TEMPLATES } from '../data/seed';
 import { nextExerciseTarget } from '../lib/engines';
 import { fmtSession, uid } from '../lib/format';
-import { Card, Empty, Pill, SectionHeader } from './UI';
+import { Card, Empty, ExplainTooltip, Pill, SectionHeader } from './UI';
 
 type Props = {
   data: AppData;
@@ -110,6 +110,15 @@ function ExerciseLogger({ exerciseId, setsTarget, data, onAdd }: { exerciseId: s
   });
   const [localSets, setLocalSets] = useState<SetLog[]>([]);
 
+  const pedagogyWarnings = useMemo(() => {
+    const warnings: string[] = [];
+    if (draft.rir <= 1 && (draft.technique <= 2 || draft.rom <= 2)) warnings.push('RIR muy bajo con técnica/ROM pobres: baja carga 5-10% para que la serie sea válida.');
+    if (draft.rir >= 4 && draft.reps >= exercise.repRange[1] && draft.technique >= 4) warnings.push('RIR alto con reps máximas: probablemente te quedó demasiado lejos del estímulo; sube carga gradualmente.');
+    if (draft.technique <= 2 && draft.rom >= 4) warnings.push('ROM aparente alto con técnica mala suele indicar compensaciones. Prioriza control y tempo.');
+    if (draft.rightWeakness && draft.rir <= 1) warnings.push('Con debilidad derecha evita fallo. Deja RIR 2-4 y reduce exigencia hoy.');
+    return warnings;
+  }, [draft, exercise.repRange]);
+
   function add() {
     const s = { ...draft };
     const finalSet: SetLog = { ...s, id: uid('setlocal'), createdAt: new Date().toISOString() };
@@ -135,14 +144,15 @@ function ExerciseLogger({ exerciseId, setsTarget, data, onAdd }: { exerciseId: s
       <div className="setGrid">
         <label>Peso <input type="number" step="0.5" value={draft.weight} onChange={(e) => setDraft({ ...draft, weight: Number(e.target.value) })} /></label>
         <label>Reps <input type="number" value={draft.reps} onChange={(e) => setDraft({ ...draft, reps: Number(e.target.value) })} /></label>
-        <label>RIR <input type="number" min="0" max="5" value={draft.rir} onChange={(e) => setDraft({ ...draft, rir: Number(e.target.value) })} /></label>
+        <label>RIR <ExplainTooltip text="Repeticiones en reserva: cuántas reps limpias te quedaban antes del fallo." /><input type="number" min="0" max="5" value={draft.rir} onChange={(e) => setDraft({ ...draft, rir: Number(e.target.value) })} /></label>
         <label>Técnica <select value={draft.technique} onChange={(e) => setDraft({ ...draft, technique: Number(e.target.value) as 1|2|3|4|5 })}><option value="5">Excelente</option><option value="4">Buena</option><option value="3">Aceptable</option><option value="2">Trampa</option><option value="1">Mala</option></select></label>
-        <label>ROM <select value={draft.rom} onChange={(e) => setDraft({ ...draft, rom: Number(e.target.value) as 1|2|3|4|5 })}><option value="5">Completo</option><option value="4">Casi completo</option><option value="3">Parcial útil</option><option value="2">Parcial ego</option><option value="1">No válido</option></select></label>
+        <label>ROM <ExplainTooltip text="Rango de movimiento. Valora recorrido útil y controlado, no solo amplitud visual." /><select value={draft.rom} onChange={(e) => setDraft({ ...draft, rom: Number(e.target.value) as 1|2|3|4|5 })}><option value="5">Completo</option><option value="4">Casi completo</option><option value="3">Parcial útil</option><option value="2">Parcial ego</option><option value="1">No válido</option></select></label>
         <label>Hombro <input type="number" min="0" max="10" value={draft.shoulderPain} onChange={(e) => setDraft({ ...draft, shoulderPain: Number(e.target.value) })} /></label>
         <label>Codo <input type="number" min="0" max="10" value={draft.elbowPain} onChange={(e) => setDraft({ ...draft, elbowPain: Number(e.target.value) })} /></label>
         <label>Lumbar <input type="number" min="0" max="10" value={draft.lumbarPain} onChange={(e) => setDraft({ ...draft, lumbarPain: Number(e.target.value) })} /></label>
       </div>
       <label className="check danger"><input type="checkbox" checked={draft.rightWeakness} onChange={(e) => setDraft({ ...draft, rightWeakness: e.target.checked })} /> Pérdida de fuerza derecha</label>
+      {pedagogyWarnings.length ? <div className="warningStack">{pedagogyWarnings.map((w) => <p key={w} className="warningText">⚠ {w}</p>)}</div> : null}
       <button className="secondaryButton" onClick={add}>Añadir serie</button>
       {localSets.length ? <div className="setHistory">{localSets.map((s, i) => <span key={s.id}>S{i+1}: {s.weight}kg × {s.reps} · RIR {s.rir}</span>)}</div> : <Empty title="Sin series" body="Añade la primera serie cuando termines." />}
     </Card>

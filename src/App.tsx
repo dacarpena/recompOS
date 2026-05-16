@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { AppData, BodyMetric, DailyCheckin, MealLog, SessionType, WorkoutSession } from './types';
-import { addMeal, addMetric, addSession, exportData, getLegacyKey, importDataFile, keyForUser, loadData, readLegacyData, saveData, upsertCheckin } from './lib/storage';
+import { addMeal, addMetric, addSession, exportData, getLegacyKey, importDataFile, keyForUser, loadData, readLegacyData, readOnboardingCompleted, saveData, saveOnboardingCompleted, upsertCheckin } from './lib/storage';
 import { getCurrentUser, signIn, signOut, signUp, User } from './lib/auth';
 import { Today } from './components/Today';
 import { Workout } from './components/Workout';
@@ -11,6 +11,7 @@ import { Campaign } from './components/Campaign';
 import { Plan } from './components/Plan';
 import { Overload } from './components/Overload';
 import { Auth } from './components/Auth';
+import { Onboarding } from './components/Onboarding';
 
 type Tab = 'today' | 'train' | 'overload' | 'atlas' | 'nutrition' | 'progress' | 'campaign' | 'plan';
 
@@ -34,14 +35,17 @@ export default function App() {
   const [tab, setTab] = useState<Tab>('today');
   const [moreOpen, setMoreOpen] = useState(false);
   const [initialWorkout, setInitialWorkout] = useState<SessionType>('A_PUSH');
+  const [onboardingCompleted, setOnboardingCompleted] = useState(true);
 
   useEffect(() => {
     if (!user) {
       setData(null);
       setTab('today');
+      setOnboardingCompleted(true);
       return;
     }
     setData(loadData(user.id));
+    setOnboardingCompleted(readOnboardingCompleted(user.id));
   }, [user]);
 
   useEffect(() => {
@@ -97,6 +101,12 @@ export default function App() {
     signOut();
     setData(null);
     setUser(null);
+  }
+
+  function handleCompleteOnboarding() {
+    if (!user) return;
+    saveOnboardingCompleted(user.id, true);
+    setOnboardingCompleted(true);
   }
 
   if (!user) {
@@ -157,6 +167,7 @@ export default function App() {
           onImportLegacy={handleImportLegacy}
         />
         <section className="card guidePanel">
+          <Onboarding completed={onboardingCompleted} onComplete={handleCompleteOnboarding} />
           {firstSession ? (
             <>
               <h3>Tu primera sesión guiada</h3>
