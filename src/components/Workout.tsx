@@ -48,6 +48,12 @@ export function Workout({ data, initialType = 'A_PUSH', onSaveSession }: Props) 
     return Array.from(count.entries()).sort((a, b) => b[1] - a[1]).slice(0, 5);
   }, [sets]);
 
+  const progress = useMemo(() => {
+    const total = template.exercises.length;
+    const done = template.exercises.filter((item) => sets.some((s) => s.exerciseId === item.exerciseId)).length;
+    return { done, total, pct: total ? Math.round((done / total) * 100) : 0 };
+  }, [sets, template.exercises]);
+
   return (
     <div className="screenGrid">
       <SectionHeader eyebrow="Workout Coach" title="Entrenar con datos, no con ego" body="Registra peso, reps, RIR, técnica, ROM y dolor. La app premia volumen útil, no sufrimiento decorativo." />
@@ -77,6 +83,7 @@ export function Workout({ data, initialType = 'A_PUSH', onSaveSession }: Props) 
             <label>Notas <textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Sensación, máquinas ocupadas, molestias..." /></label>
             <div className="miniSummary">
               <strong>{sets.length} series registradas</strong>
+              <span>Progreso sesión: {progress.done}/{progress.total} ejercicios ({progress.pct}%)</span>
               {volumeSummary.length ? volumeSummary.map(([m, v]) => <span key={m}>{m}: {v.toFixed(1)} set equiv.</span>) : <span>Sin volumen todavía.</span>}
             </div>
             <button className="primaryButton full" onClick={save} disabled={!sets.length}>Guardar sesión</button>
@@ -96,6 +103,20 @@ function ExerciseLogger({ exerciseId, setsTarget, data, onAdd }: { exerciseId: s
   const exercise = EXERCISES.find((e) => e.id === exerciseId)!;
   const target = nextExerciseTarget(data, exercise);
   const effectiveSetsTarget = target.sets ?? setsTarget;
+  const [mode, setMode] = useState<'simple' | 'advanced'>('simple');
+  const [generalPain, setGeneralPain] = useState(0);
+  const [savePulse, setSavePulse] = useState<'idle' | 'saved'>('idle');
+  const [localSets, setLocalSets] = useState<SetLog[]>([]);
+
+  const latestSet = useMemo(() => {
+    const historical = data.sessions
+      .flatMap((session) => session.sets)
+      .filter((set) => set.exerciseId === exerciseId)
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
+    const local = localSets[localSets.length - 1];
+    return local ?? historical;
+  }, [data.sessions, exerciseId, localSets]);
+
   const [draft, setDraft] = useState<DraftSet>({
     exerciseId,
     weight: target.weight,
@@ -108,14 +129,43 @@ function ExerciseLogger({ exerciseId, setsTarget, data, onAdd }: { exerciseId: s
     lumbarPain: 0,
     rightWeakness: false
   });
-  const [localSets, setLocalSets] = useState<SetLog[]>([]);
 
   function add() {
     const s = { ...draft };
     const finalSet: SetLog = { ...s, id: uid('setlocal'), createdAt: new Date().toISOString() };
     setLocalSets((prev) => [...prev, finalSet]);
     onAdd(exerciseId, s);
-    setDraft((prev) => ({ ...prev, reps: Math.max(exercise.repRange[0], prev.reps - 1), rir: exercise.rirTarget[0] }));
+    setSavePulse('saved');
+    setTimeout(() => setSavePulse('idle'), 1400);
+    setDraft((prev) => ({
+      ...prev,
+      weight: s.weight,
+      reps: Math.max(exercise.repRange[0], s.reps - 1),
+      rir: s.rir,
+      technique: s.technique,
+      rom: s.rom,
+      shoulderPain: s.shoulderPain,
+      elbowPain: s.elbowPain,
+      lumbarPain: s.lumbarPain,
+      rightWeakness: s.rightWeakness
+    }));
+  }
+
+  function smartFill() {
+    if (!latestSet) return;
+    setGeneralPain(Math.round((latestSet.shoulderPain + latestSet.elbowPain + latestSet.lumbarPain) / 3));
+    setDraft((prev) => ({
+      ...prev,
+      weight: latestSet.weight,
+      reps: latestSet.reps,
+      rir: latestSet.rir,
+      technique: latestSet.technique,
+      rom: latestSet.rom,
+      shoulderPain: latestSet.shoulderPain,
+      elbowPain: latestSet.elbowPain,
+      lumbarPain: latestSet.lumbarPain,
+      rightWeakness: latestSet.rightWeakness
+    }));
   }
 
   return (
@@ -132,18 +182,38 @@ function ExerciseLogger({ exerciseId, setsTarget, data, onAdd }: { exerciseId: s
       <div className="cueGrid">
         {exercise.cues.slice(0, 3).map((c) => <span key={c}>• {c}</span>)}
       </div>
-      <div className="setGrid">
-        <label>Peso <input type="number" step="0.5" value={draft.weight} onChange={(e) => setDraft({ ...draft, weight: Number(e.target.value) })} /></label>
-        <label>Reps <input type="number" value={draft.reps} onChange={(e) => setDraft({ ...draft, reps: Number(e.target.value) })} /></label>
+      <div className="row between wrap">
+        <div className="row wrap">
+          <button className={`tabButton ${mode === 'simple' ? 'active' : ''}`} onClick={() => setMode('simple')}>Modo simple</button>
+          <button className={`tabButton ${mode === 'advanced' ? 'active' : ''}`} onClick={() => setMode('advanced')}>Modo avanzado</button>
+        </div>
+        <button className="secondaryButton" onClick={smartFill} disabled={!latestSet}>Autorrellenar última serie</button>
+      </div>
+      <div className="setSection">
+        <h4>Carga</h4>
+        <div className="setGrid">
+          <label>Peso <input type="number" step="0.5" value={draft.weight} onChange={(e) => setDraft({ ...draft, weight: Number(e.target.value) })} /></label>
+          <label>Reps <input type="number" value={draft.reps} onChange={(e) => setDraft({ ...draft, reps: Number(e.target.value) })} /></label>
+        </div>
+      </div>
+      {mode === 'advanced' ? <><div className="setSection"><h4>Calidad</h4><div className="setGrid">
         <label>RIR <input type="number" min="0" max="5" value={draft.rir} onChange={(e) => setDraft({ ...draft, rir: Number(e.target.value) })} /></label>
         <label>Técnica <select value={draft.technique} onChange={(e) => setDraft({ ...draft, technique: Number(e.target.value) as 1|2|3|4|5 })}><option value="5">Excelente</option><option value="4">Buena</option><option value="3">Aceptable</option><option value="2">Trampa</option><option value="1">Mala</option></select></label>
         <label>ROM <select value={draft.rom} onChange={(e) => setDraft({ ...draft, rom: Number(e.target.value) as 1|2|3|4|5 })}><option value="5">Completo</option><option value="4">Casi completo</option><option value="3">Parcial útil</option><option value="2">Parcial ego</option><option value="1">No válido</option></select></label>
+      </div></div><div className="setSection"><h4>Seguridad</h4><div className="setGrid">
         <label>Hombro <input type="number" min="0" max="10" value={draft.shoulderPain} onChange={(e) => setDraft({ ...draft, shoulderPain: Number(e.target.value) })} /></label>
         <label>Codo <input type="number" min="0" max="10" value={draft.elbowPain} onChange={(e) => setDraft({ ...draft, elbowPain: Number(e.target.value) })} /></label>
         <label>Lumbar <input type="number" min="0" max="10" value={draft.lumbarPain} onChange={(e) => setDraft({ ...draft, lumbarPain: Number(e.target.value) })} /></label>
+      </div></div></> : <div className="setSection"><h4>Seguridad</h4><div className="setGrid"><label>Dolor general (0-10)<input type="number" min="0" max="10" value={generalPain} onChange={(e) => {
+        const pain = Number(e.target.value);
+        setGeneralPain(pain);
+        setDraft({ ...draft, shoulderPain: pain, elbowPain: pain, lumbarPain: pain });
+      }} /></label></div></div>}
+      <div>
+        <label className="check danger"><input type="checkbox" checked={draft.rightWeakness} onChange={(e) => setDraft({ ...draft, rightWeakness: e.target.checked })} /> Molestia / pérdida de fuerza derecha</label>
       </div>
-      <label className="check danger"><input type="checkbox" checked={draft.rightWeakness} onChange={(e) => setDraft({ ...draft, rightWeakness: e.target.checked })} /> Pérdida de fuerza derecha</label>
       <button className="secondaryButton" onClick={add}>Añadir serie</button>
+      {savePulse === 'saved' ? <Pill tone="green">Serie guardada ✓</Pill> : null}
       {localSets.length ? <div className="setHistory">{localSets.map((s, i) => <span key={s.id}>S{i+1}: {s.weight}kg × {s.reps} · RIR {s.rir}</span>)}</div> : <Empty title="Sin series" body="Añade la primera serie cuando termines." />}
     </Card>
   );

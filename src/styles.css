@@ -105,6 +105,8 @@ input:focus, select:focus, textarea:focus { border-color: rgba(157,124,255,.65);
 .exerciseStack { display: grid; gap: 1rem; }
 .sessionAside { position: sticky; top: 6.2rem; display: grid; gap: 1rem; }
 .exerciseCard { display: grid; gap: .85rem; }
+.setSection { display: grid; gap: .45rem; padding: .75rem; border-radius: 16px; border: 1px solid var(--line); background: rgba(255,255,255,.025); }
+.setSection h4 { margin: 0; font-size: .82rem; letter-spacing: .04em; text-transform: uppercase; color: #cbd5e1; }
 .cueGrid { display: grid; gap: .35rem; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); color: #cbd5e1; font-size: .86rem; }
 .setHistory, .miniSummary { display: grid; gap: .35rem; padding: .7rem; background: rgba(255,255,255,.035); border-radius: 16px; color: var(--muted); }
 .setHistory span, .miniSummary span { font-size: .84rem; }
