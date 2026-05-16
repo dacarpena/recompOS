@@ -1,4 +1,5 @@
 import { FormEvent, useState } from 'react';
+import { LogOut, UserCircle } from 'lucide-react';
 import { User } from '../lib/auth';
 
 interface AuthProps {
@@ -26,35 +27,48 @@ export function Auth({ currentUser, onSignUp, onSignIn, onSignOut, canImportLega
 
   if (!currentUser) {
     return (
-      <div className="card" style={{ maxWidth: 760, margin: '3rem auto' }}>
-        <h2>Bienvenido a RecompOS</h2>
-        <p>Inicia sesión o crea una cuenta local para mantener tus datos separados por usuario.</p>
-        <div style={{ display: 'grid', gap: 16, gridTemplateColumns: '1fr 1fr' }}>
-          <form onSubmit={submitSignUp}>
-            <h3>Registro</h3>
-            <input placeholder="Nombre" value={signUpData.displayName} onChange={(e) => setSignUpData((s) => ({ ...s, displayName: e.target.value }))} />
-            <input placeholder="Email" type="email" value={signUpData.email} onChange={(e) => setSignUpData((s) => ({ ...s, email: e.target.value }))} />
-            <input placeholder="Password" type="password" value={signUpData.password} onChange={(e) => setSignUpData((s) => ({ ...s, password: e.target.value }))} />
-            <button type="submit">Crear cuenta</button>
-          </form>
-          <form onSubmit={submitSignIn}>
-            <h3>Login</h3>
-            <input placeholder="Email" type="email" value={signInData.email} onChange={(e) => setSignInData((s) => ({ ...s, email: e.target.value }))} />
-            <input placeholder="Password" type="password" value={signInData.password} onChange={(e) => setSignInData((s) => ({ ...s, password: e.target.value }))} />
-            <button type="submit">Entrar</button>
-          </form>
-        </div>
-      </div>
+      <main className="authShell">
+        <section className="authCard">
+          <div className="authIntro">
+            <span className="logo"><UserCircle size={22} strokeWidth={2.3} /></span>
+            <div>
+              <span className="eyebrow">Acceso local</span>
+              <h1>RecompOS</h1>
+              <p>Separa tus datos por usuario y conserva el flujo de entrenamiento, nutrición y progreso en este dispositivo.</p>
+            </div>
+          </div>
+          <div className="authGrid">
+            <form className="authForm" onSubmit={submitSignUp}>
+              <h3>Crear cuenta</h3>
+              <label>Nombre<input placeholder="Dani" value={signUpData.displayName} onChange={(e) => setSignUpData((s) => ({ ...s, displayName: e.target.value }))} /></label>
+              <label>Email<input placeholder="tu@email.com" type="email" value={signUpData.email} onChange={(e) => setSignUpData((s) => ({ ...s, email: e.target.value }))} /></label>
+              <label>Password<input placeholder="Mínimo 6 caracteres" type="password" value={signUpData.password} onChange={(e) => setSignUpData((s) => ({ ...s, password: e.target.value }))} /></label>
+              <button className="primaryButton" type="submit">Crear cuenta</button>
+            </form>
+            <form className="authForm" onSubmit={submitSignIn}>
+              <h3>Entrar</h3>
+              <label>Email<input placeholder="tu@email.com" type="email" value={signInData.email} onChange={(e) => setSignInData((s) => ({ ...s, email: e.target.value }))} /></label>
+              <label>Password<input placeholder="Tu password" type="password" value={signInData.password} onChange={(e) => setSignInData((s) => ({ ...s, password: e.target.value }))} /></label>
+              <button className="secondaryButton" type="submit">Entrar</button>
+            </form>
+          </div>
+        </section>
+      </main>
     );
   }
 
   return (
-    <div className="card" style={{ padding: 12 }}>
-      <strong>{currentUser.displayName}</strong>
-      <small>{currentUser.email}</small>
-      <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-        {canImportLegacy && <button onClick={onImportLegacy}>Importar datos previos a esta cuenta</button>}
-        <button onClick={onSignOut}>Cambiar de usuario / Cerrar sesión</button>
+    <div className="accountPanel">
+      <div className="accountIdentity">
+        <UserCircle size={19} />
+        <div>
+          <strong>{currentUser.displayName}</strong>
+          <small>{currentUser.email}</small>
+        </div>
+      </div>
+      <div className="accountActions">
+        {canImportLegacy && <button className="secondaryButton" onClick={onImportLegacy}>Importar datos previos</button>}
+        <button className="iconTextButton subtle" onClick={onSignOut}><LogOut size={16} /> <span>Cerrar sesión</span></button>
       </div>
     </div>
   );

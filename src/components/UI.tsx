@@ -1,4 +1,5 @@
 import React from 'react';
+import { Info } from 'lucide-react';
 import { Traffic } from '../types';
 
 export function Card({ children, className = '' }: { children: React.ReactNode; className?: string }) {
@@ -32,7 +33,7 @@ export function Stat({ label, value, hint }: { label: React.ReactNode; value: Re
 }
 
 export function ExplainTooltip({ text }: { text: string }) {
-  return <span className="explainTooltip" title={text} aria-label={text}>¿Qué significa?</span>;
+  return <span className="explainTooltip" title={text} aria-label={text}><Info size={13} strokeWidth={2.4} /></span>;
 }
 
 export function SectionHeader({ eyebrow, title, body }: { eyebrow?: string; title: string; body?: string }) {

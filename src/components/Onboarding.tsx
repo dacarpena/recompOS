@@ -1,4 +1,4 @@
-import { Card, Pill } from './UI';
+import { Pill } from './UI';
 
 type OnboardingStep = { id: string; title: string; detail: string; tabHint: string };
 
@@ -13,7 +13,7 @@ const STEPS: OnboardingStep[] = [
 export function Onboarding({ completed, onComplete }: { completed: boolean; onComplete: () => void }) {
   if (completed) return null;
   return (
-    <Card>
+    <div className="onboardingPanel">
       <div className="row between wrap gap">
         <div>
           <h3>Tour inicial (2 min)</h3>
@@ -32,6 +32,6 @@ export function Onboarding({ completed, onComplete }: { completed: boolean; onCo
           </div>
         ))}
       </div>
-    </Card>
+    </div>
   );
 }

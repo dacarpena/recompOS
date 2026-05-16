@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Activity, Apple, BarChart3, CalendarDays, CheckCircle2, Circle, Download, Dumbbell, Gauge, Map, ShieldCheck, Trophy, Upload } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { AppData, BodyMetric, DailyCheckin, MealLog, SessionType, WorkoutSession } from './types';
 import { addMeal, addMetric, addSession, exportData, getLegacyKey, importDataFile, keyForUser, loadData, readLegacyData, readOnboardingCompleted, saveData, saveOnboardingCompleted, upsertCheckin } from './lib/storage';
 import { getCurrentUser, signIn, signOut, signUp, User } from './lib/auth';
@@ -15,25 +17,23 @@ import { Onboarding } from './components/Onboarding';
 
 type Tab = 'today' | 'train' | 'overload' | 'atlas' | 'nutrition' | 'progress' | 'campaign' | 'plan';
 
-const PRIMARY_TABS: Tab[] = ['today', 'train', 'progress'];
-const SECONDARY_TABS: Tab[] = ['nutrition', 'atlas', 'overload', 'campaign', 'plan'];
+const NAV_TABS: Tab[] = ['today', 'train', 'overload', 'atlas', 'nutrition', 'progress', 'campaign', 'plan'];
 
-const TAB_META: Record<Tab, { label: string; cta: string }> = {
-  today: { label: 'Hoy', cta: 'Guardar check-in' },
-  train: { label: 'Entrenar', cta: 'Continuar entrenamiento' },
-  progress: { label: 'Progreso', cta: 'Registrar progreso' },
-  nutrition: { label: 'Nutrición', cta: 'Registrar comida' },
-  atlas: { label: 'Atlas', cta: 'Explorar atlas' },
-  overload: { label: 'Sobrecarga', cta: 'Aplicar recomendación' },
-  campaign: { label: 'Campaña', cta: 'Ver misiones' },
-  plan: { label: 'Plan', cta: 'Revisar plan' }
+const TAB_META: Record<Tab, { label: string; cta: string; description: string; icon: LucideIcon }> = {
+  today: { label: 'Hoy', cta: 'Guardar check-in', description: 'Decisión diaria', icon: Gauge },
+  train: { label: 'Entrenar', cta: 'Continuar entrenamiento', description: 'Logger de sesión', icon: Dumbbell },
+  overload: { label: 'Sobrecarga', cta: 'Aplicar recomendación', description: 'Progresión', icon: Activity },
+  atlas: { label: 'Atlas', cta: 'Explorar atlas', description: 'Músculos y rangos', icon: Map },
+  nutrition: { label: 'Nutrición', cta: 'Registrar comida', description: 'Proteína y hábitos', icon: Apple },
+  progress: { label: 'Progreso', cta: 'Registrar progreso', description: 'Métricas y PRs', icon: BarChart3 },
+  campaign: { label: 'Campaña', cta: 'Ver misiones', description: 'Objetivos', icon: Trophy },
+  plan: { label: 'Plan', cta: 'Revisar plan', description: 'Estructura A/B/C', icon: CalendarDays }
 };
 
 export default function App() {
   const [user, setUser] = useState<User | null>(() => getCurrentUser());
   const [data, setData] = useState<AppData | null>(null);
   const [tab, setTab] = useState<Tab>('today');
-  const [moreOpen, setMoreOpen] = useState(false);
   const [initialWorkout, setInitialWorkout] = useState<SessionType>('A_PUSH');
   const [onboardingCompleted, setOnboardingCompleted] = useState(true);
 
@@ -73,7 +73,6 @@ export default function App() {
 
   function goToTab(next: Tab) {
     setTab(next);
-    setMoreOpen(false);
   }
 
   function handleSaveCheckin(checkin: DailyCheckin) { setData((d) => (d ? upsertCheckin(d, checkin) : d)); }
@@ -127,37 +126,33 @@ export default function App() {
   return (
     <div className="appShell">
       <header className="appHeader">
-        <div className="brand" onClick={() => goToTab('today')}>
-          <span className="logo">◆</span>
-          <div><strong>RecompOS</strong><small>Data-driven physique RPG</small></div>
-        </div>
+        <button className="brand" type="button" onClick={() => goToTab('today')} aria-label="Ir al panel de hoy">
+          <span className="logo"><ShieldCheck size={21} strokeWidth={2.4} /></span>
+          <span><strong>RecompOS</strong><small>Physique operating system</small></span>
+        </button>
         <div className="navStack">
           <nav className="topNav" aria-label="Navegación principal">
-            {PRIMARY_TABS.map((primaryTab) => (
-              <button key={primaryTab} className={tab === primaryTab ? 'active' : ''} onClick={() => goToTab(primaryTab)}>{TAB_META[primaryTab].label}</button>
-            ))}
-            <div className="moreMenu">
-              <button className={SECONDARY_TABS.includes(tab) ? 'active' : ''} onClick={() => setMoreOpen((open) => !open)}>Más</button>
-              {moreOpen && (
-                <div className="moreDropdown">
-                  {SECONDARY_TABS.map((secondaryTab) => (
-                    <button key={secondaryTab} className={tab === secondaryTab ? 'active' : ''} onClick={() => goToTab(secondaryTab)}>{TAB_META[secondaryTab].label}</button>
-                  ))}
-                </div>
-              )}
-            </div>
+            {NAV_TABS.map((navTab) => {
+              const Icon = TAB_META[navTab].icon;
+              return (
+                <button key={navTab} className={tab === navTab ? 'active' : ''} onClick={() => goToTab(navTab)}>
+                  <Icon size={18} strokeWidth={2.25} />
+                  <span>{TAB_META[navTab].label}</span>
+                </button>
+              );
+            })}
           </nav>
           <div className="contextLine">
-            <span className="muted">Inicio / {SECONDARY_TABS.includes(tab) ? 'Más / ' : ''}{activeMeta.label}</span>
+            <span>{activeMeta.description}</span>
             <strong>{activeMeta.label}</strong>
           </div>
         </div>
         <div className="headerActions">
-          <button onClick={() => exportData(user.id, data)}>Exportar</button>
-          <label className="importButton">Importar<input type="file" accept="application/json" onChange={(e) => importFile(e.target.files?.[0])} /></label>
+          <button className="iconTextButton" aria-label="Exportar datos" onClick={() => exportData(user.id, data)}><Download size={16} /> <span>Exportar</span></button>
+          <label className="importButton iconTextButton" aria-label="Importar datos"><Upload size={16} /> <span>Importar</span><input type="file" accept="application/json" onChange={(e) => importFile(e.target.files?.[0])} /></label>
         </div>
       </header>
-      <main>
+      <main className="appMain">
         <Auth
           currentUser={user}
           onSignUp={() => undefined}
@@ -168,25 +163,32 @@ export default function App() {
         />
         <section className="card guidePanel">
           <Onboarding completed={onboardingCompleted} onComplete={handleCompleteOnboarding} />
-          {firstSession ? (
-            <>
-              <h3>Tu primera sesión guiada</h3>
-              <div className="list">
-                {onboardingChecklist.map((item) => (
-                  <button key={item.id} className="listItem checklistItem" onClick={() => goToTab(item.tab)}>
-                    <strong>{item.done ? '✅' : '⬜'} {item.label}</strong>
-                    <span>{item.done ? 'Completado' : 'Ir ahora'}</span>
-                  </button>
-                ))}
+          <div className="guideLayout">
+            {firstSession ? (
+              <div className="guideChecklist">
+                <h3>Tu primera sesión guiada</h3>
+                <div className="list">
+                  {onboardingChecklist.map((item) => (
+                    <button key={item.id} className="listItem checklistItem" onClick={() => goToTab(item.tab)}>
+                      <span className={`checkState ${item.done ? 'done' : ''}`}>
+                        {item.done ? <CheckCircle2 size={18} /> : <Circle size={18} />}
+                        <strong>{item.label}</strong>
+                      </span>
+                      <span>{item.done ? 'Completado' : 'Ir ahora'}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
-            </>
-          ) : (
-            <p>Checklist inicial completado. Mantén consistencia y sigue el siguiente paso recomendado.</p>
-          )}
-          <div className="nextStepBanner">
-            <span className="pill pill-purple">Siguiente paso recomendado</span>
-            <strong>{nextStep ? nextStep.label : 'Explorar Progreso para revisar avances'}</strong>
-            <button className="primaryButton" onClick={() => goToTab(nextStep ? nextStep.tab : 'progress')}>{activeMeta.cta}</button>
+            ) : (
+              <p>Checklist inicial completado. Mantén consistencia y sigue el siguiente paso recomendado.</p>
+            )}
+            <div className="nextStepBanner">
+              <span className="pill pill-purple">Siguiente paso recomendado</span>
+              <strong>{nextStep ? nextStep.label : 'Explorar Progreso para revisar avances'}</strong>
+              <button className="primaryButton" onClick={() => goToTab(nextStep ? nextStep.tab : 'progress')}>
+                {nextStep ? `Ir a ${TAB_META[nextStep.tab].label}` : activeMeta.cta}
+              </button>
+            </div>
           </div>
         </section>
         {tab === 'today' && <Today data={data} onSaveCheckin={handleSaveCheckin} onStartSession={startSession} />}
