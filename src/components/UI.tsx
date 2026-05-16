@@ -10,17 +10,30 @@ export function Pill({ children, tone = 'default' }: { children: React.ReactNode
 }
 
 export function Meter({ value, max = 100, label }: { value: number; max?: number; label?: string }) {
-  const pct = Math.max(0, Math.min(100, (value / max) * 100));
+  const safeMax = max <= 0 ? 100 : max;
+  const safeValue = Math.max(0, Math.min(safeMax, value));
+  const pct = Math.max(0, Math.min(100, (safeValue / safeMax) * 100));
+  const meterLabel = label ?? 'Progreso';
   return (
-    <div className="meterWrap" aria-label={label}>
-      <div className="meter"><div style={{ width: `${pct}%` }} /></div>
-      {label && <span className="meterLabel">{label}</span>}
+    <div className="meterWrap">
+      <div
+        className="meter"
+        role="meter"
+        aria-label={meterLabel}
+        aria-valuemin={0}
+        aria-valuemax={safeMax}
+        aria-valuenow={safeValue}
+      >
+        <div style={{ width: `${pct}%` }} />
+      </div>
+      <span className="meterLabel">{meterLabel}: {safeValue}/{safeMax}</span>
     </div>
   );
 }
 
 export function TrafficDot({ status }: { status: Traffic }) {
-  return <span className={`dot dot-${status}`} />;
+  const text = status === 'green' ? 'Verde' : status === 'yellow' ? 'Amarillo' : 'Rojo';
+  return <span className="trafficStatus"><span className={`dot dot-${status}`} aria-hidden="true" /> <span>{text}</span></span>;
 }
 
 export function Empty({ title, body }: { title: string; body: string }) {

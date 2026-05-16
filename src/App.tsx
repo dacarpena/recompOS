@@ -34,6 +34,8 @@ export default function App() {
   const [tab, setTab] = useState<Tab>('today');
   const [moreOpen, setMoreOpen] = useState(false);
   const [initialWorkout, setInitialWorkout] = useState<SessionType>('A_PUSH');
+  const [highContrast, setHighContrast] = useState(() => localStorage.getItem('ui:highContrast') === '1');
+  const [compactDensity, setCompactDensity] = useState(() => localStorage.getItem('ui:compactDensity') === '1');
 
   useEffect(() => {
     if (!user) {
@@ -48,6 +50,9 @@ export default function App() {
     if (!user || !data) return;
     saveData(user.id, data);
   }, [user, data]);
+
+  useEffect(() => { localStorage.setItem('ui:highContrast', highContrast ? '1' : '0'); }, [highContrast]);
+  useEffect(() => { localStorage.setItem('ui:compactDensity', compactDensity ? '1' : '0'); }, [compactDensity]);
 
   const canImportLegacy = useMemo(() => {
     if (!user || !readLegacyData()) return false;
@@ -115,7 +120,7 @@ export default function App() {
   if (!data) return null;
 
   return (
-    <div className="appShell">
+    <div className={`appShell ${highContrast ? 'highContrast' : ''} ${compactDensity ? 'densityCompact' : 'densityNormal'}`}>
       <header className="appHeader">
         <div className="brand" onClick={() => goToTab('today')}>
           <span className="logo">◆</span>
@@ -143,6 +148,8 @@ export default function App() {
           </div>
         </div>
         <div className="headerActions">
+          <button onClick={() => setHighContrast((v) => !v)} aria-pressed={highContrast}>Contraste {highContrast ? "alto" : "normal"}</button>
+          <button onClick={() => setCompactDensity((v) => !v)} aria-pressed={compactDensity}>Densidad {compactDensity ? "compacta" : "normal"}</button>
           <button onClick={() => exportData(user.id, data)}>Exportar</button>
           <label className="importButton">Importar<input type="file" accept="application/json" onChange={(e) => importFile(e.target.files?.[0])} /></label>
         </div>

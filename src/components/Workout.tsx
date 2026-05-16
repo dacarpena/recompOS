@@ -73,7 +73,8 @@ export function Workout({ data, initialType = 'A_PUSH', onSaveSession }: Props) 
         <aside className="sessionAside">
           <Card>
             <h3>Sesión actual</h3>
-            <label>Energía 1-10 <input type="number" min="1" max="10" value={energy} onChange={(e) => setEnergy(Number(e.target.value))} /></label>
+            <label>Energía 1-10 <input type="number" min="1" max="10" aria-describedby="session-energy-help" value={energy} onChange={(e) => setEnergy(Number(e.target.value))} /></label>
+            <small id="session-energy-help" className="fieldHint">Rango válido: 1 a 10.</small>
             <label>Notas <textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Sensación, máquinas ocupadas, molestias..." /></label>
             <div className="miniSummary">
               <strong>{sets.length} series registradas</strong>
@@ -134,14 +135,17 @@ function ExerciseLogger({ exerciseId, setsTarget, data, onAdd }: { exerciseId: s
       </div>
       <div className="setGrid">
         <label>Peso <input type="number" step="0.5" value={draft.weight} onChange={(e) => setDraft({ ...draft, weight: Number(e.target.value) })} /></label>
-        <label>Reps <input type="number" value={draft.reps} onChange={(e) => setDraft({ ...draft, reps: Number(e.target.value) })} /></label>
-        <label>RIR <input type="number" min="0" max="5" value={draft.rir} onChange={(e) => setDraft({ ...draft, rir: Number(e.target.value) })} /></label>
+        <label>Reps <input type="number" min={exercise.repRange[0]} max={exercise.repRange[1]} aria-describedby={`${exerciseId}-reps-help`} value={draft.reps} onChange={(e) => setDraft({ ...draft, reps: Number(e.target.value) })} /></label>
+        <label>RIR <input type="number" min="0" max="5" aria-describedby={`${exerciseId}-rir-help`} value={draft.rir} onChange={(e) => setDraft({ ...draft, rir: Number(e.target.value) })} /></label>
         <label>Técnica <select value={draft.technique} onChange={(e) => setDraft({ ...draft, technique: Number(e.target.value) as 1|2|3|4|5 })}><option value="5">Excelente</option><option value="4">Buena</option><option value="3">Aceptable</option><option value="2">Trampa</option><option value="1">Mala</option></select></label>
         <label>ROM <select value={draft.rom} onChange={(e) => setDraft({ ...draft, rom: Number(e.target.value) as 1|2|3|4|5 })}><option value="5">Completo</option><option value="4">Casi completo</option><option value="3">Parcial útil</option><option value="2">Parcial ego</option><option value="1">No válido</option></select></label>
         <label>Hombro <input type="number" min="0" max="10" value={draft.shoulderPain} onChange={(e) => setDraft({ ...draft, shoulderPain: Number(e.target.value) })} /></label>
         <label>Codo <input type="number" min="0" max="10" value={draft.elbowPain} onChange={(e) => setDraft({ ...draft, elbowPain: Number(e.target.value) })} /></label>
         <label>Lumbar <input type="number" min="0" max="10" value={draft.lumbarPain} onChange={(e) => setDraft({ ...draft, lumbarPain: Number(e.target.value) })} /></label>
       </div>
+      <small id={`${exerciseId}-reps-help`} className="fieldHint">Rango válido de reps: {exercise.repRange[0]} a {exercise.repRange[1]}.</small>
+      <small id={`${exerciseId}-rir-help`} className="fieldHint">Rango válido de RIR: 0 a 5.</small>
+      {(draft.rir < 0 || draft.rir > 5) ? <p className="fieldError" role="alert">RIR debe estar entre 0 y 5.</p> : null}
       <label className="check danger"><input type="checkbox" checked={draft.rightWeakness} onChange={(e) => setDraft({ ...draft, rightWeakness: e.target.checked })} /> Pérdida de fuerza derecha</label>
       <button className="secondaryButton" onClick={add}>Añadir serie</button>
       {localSets.length ? <div className="setHistory">{localSets.map((s, i) => <span key={s.id}>S{i+1}: {s.weight}kg × {s.reps} · RIR {s.rir}</span>)}</div> : <Empty title="Sin series" body="Añade la primera serie cuando termines." />}

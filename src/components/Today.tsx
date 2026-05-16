@@ -65,13 +65,17 @@ export function Today({ data, onSaveCheckin, onStartSession }: Props) {
 
       <Card>
         <h3>Check-in rápido</h3>
+        <p className="muted" id="checkin-help">Completa los rangos sugeridos para que las recomendaciones sean más precisas.</p>
         <div className="formGrid">
-          <label>Sueño <input type="number" step="0.25" value={checkin?.sleepHours ?? 8} onChange={(e) => updateCheckin({ sleepHours: Number(e.target.value) })} /></label>
-          <label>Energía 1-10 <input type="number" min="1" max="10" value={checkin?.energy ?? 8} onChange={(e) => updateCheckin({ energy: Number(e.target.value) })} /></label>
+          <label>Sueño (4-12 h) <input type="number" min="4" max="12" step="0.25" aria-describedby="sleep-help" value={checkin?.sleepHours ?? 8} onChange={(e) => updateCheckin({ sleepHours: Number(e.target.value) })} /></label>
+          <small id="sleep-help" className="fieldHint">Rango válido: 4 a 12 horas.</small>
+          <label>Energía 1-10 <input type="number" min="1" max="10" aria-describedby="energy-help" value={checkin?.energy ?? 8} onChange={(e) => updateCheckin({ energy: Number(e.target.value) })} /></label>
+          <small id="energy-help" className="fieldHint">Rango válido: 1 a 10.</small>
           <label>HRV <input type="number" value={checkin?.hrvMs ?? ''} onChange={(e) => updateCheckin({ hrvMs: Number(e.target.value) || undefined })} /></label>
           <label>FC reposo <input type="number" value={checkin?.restingHr ?? ''} onChange={(e) => updateCheckin({ restingHr: Number(e.target.value) || undefined })} /></label>
           <label>Body Battery <input type="number" value={checkin?.bodyBattery ?? ''} onChange={(e) => updateCheckin({ bodyBattery: Number(e.target.value) || undefined })} /></label>
-          <label>Pasos <input type="number" value={checkin?.steps ?? ''} onChange={(e) => updateCheckin({ steps: Number(e.target.value) || undefined })} /></label>
+          <label>Pasos <input type="number" min="0" max="100000" aria-describedby="steps-help" value={checkin?.steps ?? ''} onChange={(e) => updateCheckin({ steps: Number(e.target.value) || undefined })} /></label>
+          <small id="steps-help" className="fieldHint">Rango válido: 0 a 100000.</small>
           <label>Estado hombro
             <select value={checkin?.shoulderStatus ?? 'yellow'} onChange={(e) => updateCheckin({ shoulderStatus: e.target.value as Traffic })}>
               <option value="green">Verde</option><option value="yellow">Amarillo</option><option value="red">Rojo</option>
@@ -79,6 +83,7 @@ export function Today({ data, onSaveCheckin, onStartSession }: Props) {
           </label>
           <label className="check"><input type="checkbox" checked={checkin?.rightWeakness ?? false} onChange={(e) => updateCheckin({ rightWeakness: e.target.checked })} /> Pérdida de fuerza derecha</label>
         </div>
+        {(checkin?.energy ?? 8) < 1 || (checkin?.energy ?? 8) > 10 ? <p className="fieldError" role="alert">La energía debe estar entre 1 y 10.</p> : null}
       </Card>
 
       <div className="grid two">
