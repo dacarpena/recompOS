@@ -1,7 +1,15 @@
 import { AppData, BodyMetric, DailyCheckin, MealLog, WorkoutSession } from '../types';
 import { dateKey, uid } from './format';
 
-const KEY = 'recomp-os-web-v1';
+const LEGACY_KEY = 'recomp-os-web-v1';
+
+export function keyForUser(userId: string): string {
+  return `${LEGACY_KEY}:${userId}`;
+}
+
+export function getLegacyKey(): string {
+  return LEGACY_KEY;
+}
 
 function initialData(): AppData {
   const today = dateKey();
@@ -33,8 +41,8 @@ function initialData(): AppData {
   };
 }
 
-export function loadData(): AppData {
-  const raw = localStorage.getItem(KEY);
+export function loadData(userId: string): AppData {
+  const raw = localStorage.getItem(keyForUser(userId));
   if (!raw) return initialData();
   try {
     const parsed = JSON.parse(raw) as AppData;
@@ -44,27 +52,29 @@ export function loadData(): AppData {
   }
 }
 
-export function saveData(data: AppData) {
+export function saveData(userId: string, data: AppData) {
   const payload = { ...data, updatedAt: new Date().toISOString() };
-  localStorage.setItem(KEY, JSON.stringify(payload));
+  localStorage.setItem(keyForUser(userId), JSON.stringify(payload));
 }
 
-export function exportData(data: AppData) {
+export function exportData(userId: string, data: AppData) {
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `recomp-os-backup-${dateKey()}.json`;
+  a.download = `recomp-os-backup-${userId}-${dateKey()}.json`;
   a.click();
   URL.revokeObjectURL(url);
 }
 
-export function importDataFile(file: File): Promise<AppData> {
+export function importDataFile(userId: string, file: File): Promise<AppData> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => {
       try {
-        resolve(JSON.parse(String(reader.result)) as AppData);
+        const parsed = JSON.parse(String(reader.result)) as AppData;
+        saveData(userId, parsed);
+        resolve(parsed);
       } catch (err) {
         reject(err);
       }
@@ -72,6 +82,16 @@ export function importDataFile(file: File): Promise<AppData> {
     reader.onerror = reject;
     reader.readAsText(file);
   });
+}
+
+export function readLegacyData(): AppData | null {
+  const raw = localStorage.getItem(LEGACY_KEY);
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as AppData;
+  } catch {
+    return null;
+  }
 }
 
 export function upsertCheckin(data: AppData, checkin: DailyCheckin): AppData {

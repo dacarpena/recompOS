@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { AppData, BodyMetric, DailyCheckin, MealLog, SessionType, WorkoutSession } from './types';
-import { addMeal, addMetric, addSession, exportData, importDataFile, loadData, saveData, upsertCheckin } from './lib/storage';
+import { addMeal, addMetric, addSession, exportData, getLegacyKey, importDataFile, keyForUser, loadData, readLegacyData, saveData, upsertCheckin } from './lib/storage';
+import { getCurrentUser, signIn, signOut, signUp, User } from './lib/auth';
 import { Today } from './components/Today';
 import { Workout } from './components/Workout';
 import { Atlas } from './components/Atlas';
@@ -9,27 +10,76 @@ import { Progress } from './components/Progress';
 import { Campaign } from './components/Campaign';
 import { Plan } from './components/Plan';
 import { Overload } from './components/Overload';
+import { Auth } from './components/Auth';
 
 type Tab = 'today' | 'train' | 'overload' | 'atlas' | 'nutrition' | 'progress' | 'campaign' | 'plan';
 
 export default function App() {
-  const [data, setData] = useState<AppData>(() => loadData());
+  const [user, setUser] = useState<User | null>(() => getCurrentUser());
+  const [data, setData] = useState<AppData | null>(null);
   const [tab, setTab] = useState<Tab>('today');
   const [initialWorkout, setInitialWorkout] = useState<SessionType>('A_PUSH');
 
-  useEffect(() => saveData(data), [data]);
+  useEffect(() => {
+    if (!user) {
+      setData(null);
+      setTab('today');
+      return;
+    }
+    setData(loadData(user.id));
+  }, [user]);
 
-  function handleSaveCheckin(checkin: DailyCheckin) { setData((d) => upsertCheckin(d, checkin)); }
-  function handleSaveSession(session: WorkoutSession) { setData((d) => addSession(d, session)); setTab('atlas'); }
-  function handleAddMeal(meal: MealLog) { setData((d) => addMeal(d, meal)); }
-  function handleAddMetric(metric: BodyMetric) { setData((d) => addMetric(d, metric)); }
+  useEffect(() => {
+    if (!user || !data) return;
+    saveData(user.id, data);
+  }, [user, data]);
+
+  const canImportLegacy = useMemo(() => {
+    if (!user || !readLegacyData()) return false;
+    return !localStorage.getItem(keyForUser(user.id));
+  }, [user]);
+
+  function handleSaveCheckin(checkin: DailyCheckin) { setData((d) => (d ? upsertCheckin(d, checkin) : d)); }
+  function handleSaveSession(session: WorkoutSession) { setData((d) => (d ? addSession(d, session) : d)); setTab('atlas'); }
+  function handleAddMeal(meal: MealLog) { setData((d) => (d ? addMeal(d, meal) : d)); }
+  function handleAddMetric(metric: BodyMetric) { setData((d) => (d ? addMetric(d, metric) : d)); }
   function startSession(type: string) { setInitialWorkout(type as SessionType); setTab('train'); }
 
   async function importFile(file?: File) {
-    if (!file) return;
-    const imported = await importDataFile(file);
+    if (!file || !user) return;
+    const imported = await importDataFile(user.id, file);
     setData(imported);
   }
+
+  function handleImportLegacy() {
+    if (!user) return;
+    const legacy = readLegacyData();
+    if (!legacy) return;
+    saveData(user.id, legacy);
+    setData(legacy);
+    localStorage.removeItem(getLegacyKey());
+  }
+
+  function handleSignOut() {
+    signOut();
+    setData(null);
+    setUser(null);
+  }
+
+  if (!user) {
+    return (
+      <Auth
+        currentUser={null}
+        onSignUp={(input) => setUser(signUp(input).user)}
+        onSignIn={(input) => setUser(signIn(input).user)}
+        onSignOut={handleSignOut}
+        canImportLegacy={false}
+        onImportLegacy={handleImportLegacy}
+      />
+    );
+  }
+
+  if (!data) return null;
 
   return (
     <div className="appShell">
@@ -49,11 +99,19 @@ export default function App() {
           <button className={tab === 'plan' ? 'active' : ''} onClick={() => setTab('plan')}>Plan</button>
         </nav>
         <div className="headerActions">
-          <button onClick={() => exportData(data)}>Exportar</button>
+          <button onClick={() => exportData(user.id, data)}>Exportar</button>
           <label className="importButton">Importar<input type="file" accept="application/json" onChange={(e) => importFile(e.target.files?.[0])} /></label>
         </div>
       </header>
       <main>
+        <Auth
+          currentUser={user}
+          onSignUp={() => undefined}
+          onSignIn={() => undefined}
+          onSignOut={handleSignOut}
+          canImportLegacy={canImportLegacy}
+          onImportLegacy={handleImportLegacy}
+        />
         {tab === 'today' && <Today data={data} onSaveCheckin={handleSaveCheckin} onStartSession={startSession} />}
         {tab === 'train' && <Workout data={data} initialType={initialWorkout} onSaveSession={handleSaveSession} />}
         {tab === 'overload' && <Overload data={data} />}
