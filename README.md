@@ -55,6 +55,28 @@ También puedes usar:
 npm run deploy:pages
 ```
 
+### Producción automática desde Git
+
+El proyecto Cloudflare Pages `recomp-os` está conectado al repo `dacarpena/recompOS`.
+Cada push a `main` dispara un despliegue de producción con:
+
+```bash
+npm run build
+```
+
+Cloudflare usa `dist` como directorio de salida. Los PRs y ramas no principales quedan como preview deployments.
+
+
+## Evitar conflictos al hacer merge de PRs
+
+Si usas dependencias con `latest`, cada PR puede regenerar `package-lock.json` con versiones distintas aunque no hayas tocado lógica, y Git detecta conflictos al mergear.
+
+Este repo ahora fija versiones exactas en `package.json` para mantener un lockfile estable. Flujo recomendado:
+
+1. No uses `latest` en dependencias.
+2. Actualiza versiones de forma intencional en un PR dedicado (`npm update` o editando `package.json`).
+3. Ejecuta `npm install` y commitea `package-lock.json` junto al cambio de versión.
+
 ## Persistencia
 
 La versión MVP guarda los datos en `localStorage`. Incluye botones de exportar/importar JSON para backups.
