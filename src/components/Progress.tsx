@@ -37,7 +37,7 @@ export function Progress({ data, onAddMetric }: { data: AppData; onAddMetric: (m
             <label>Cintura mínima cm <input type="number" step="0.1" value={waistMinCm} onChange={(e) => setWaistMinCm(e.target.value)} /></label>
             <label>Notas <input value={notes} onChange={(e) => setNotes(e.target.value)} /></label>
           </div>
-          <button className="primaryButton" onClick={saveMetric}>Guardar medición</button>
+          <button className="btn btn-primary" onClick={saveMetric}>Guardar medición</button>
         </Card>
         <Card>
           <h3>Últimas mediciones</h3>

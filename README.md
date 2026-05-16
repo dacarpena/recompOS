@@ -132,3 +132,39 @@ Cada ejercicio devuelve peso recomendado, reps objetivo, series, RIR, confianza,
 4. Importación CSV de Garmin.
 5. Algoritmo más fino por ejercicio y simetría derecha/izquierda.
 6. Modo coach AI para revisión de ciclos.
+
+## Sistema de diseño y composición (UI)
+
+Para mantener consistencia visual y velocidad de desarrollo:
+
+- Tokens base en `src/styles/tokens.css` (espaciados, radios, tipografía, elevaciones y estados semánticos).
+- Componentes base en `src/components/UI.tsx`:
+  - `Button` con variantes `primary`, `secondary`, `ghost`, `danger`.
+  - `Input` para campos estándar.
+  - `Card` para contenedores.
+  - `Badge` para etiquetas de estado/contexto.
+  - `EmptyState` para bloques sin datos.
+
+### Reglas de composición
+
+Usar estos bloques como patrón antes de crear excepciones:
+
+1. `sectionBlock`
+   - Contiene: `SectionHeader` + contenido.
+2. `actionBlock`
+   - Fila de acciones primarias/secundarias (CTA principal + soporte).
+3. `emptyBlock`
+   - Presenta `EmptyState` cuando no hay datos.
+4. `listBlock`
+   - Lista vertical homogénea de items (`list`, `listItem`).
+
+### Convención de variantes
+
+Evitar estilos ad-hoc en JSX. Preferir:
+
+- `btn btn-primary`
+- `btn btn-secondary`
+- `btn btn-ghost`
+- `btn btn-danger`
+
+Si aparece un nuevo caso visual, primero evaluar si encaja en una variante existente; si no, ampliar tokens y variante de forma explícita.

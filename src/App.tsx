@@ -175,7 +175,7 @@ export default function App() {
           <div className="nextStepBanner">
             <span className="pill pill-purple">Siguiente paso recomendado</span>
             <strong>{nextStep ? nextStep.label : 'Explorar Progreso para revisar avances'}</strong>
-            <button className="primaryButton" onClick={() => goToTab(nextStep ? nextStep.tab : 'progress')}>{activeMeta.cta}</button>
+            <button className="btn btn-primary" onClick={() => goToTab(nextStep ? nextStep.tab : 'progress')}>{activeMeta.cta}</button>
           </div>
         </section>
         {tab === 'today' && <Today data={data} onSaveCheckin={handleSaveCheckin} onStartSession={startSession} />}
