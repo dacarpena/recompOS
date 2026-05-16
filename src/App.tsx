@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { AppData, BodyMetric, DailyCheckin, MealLog, SessionType, WorkoutSession } from './types';
-import { addMeal, addMetric, addSession, exportData, getLegacyKey, importDataFile, keyForUser, loadData, readLegacyData, saveData, upsertCheckin } from './lib/storage';
+import { addMeal, addMetric, addSession, enqueueOfflineChange, exportData, getLegacyKey, hasPendingSync, importDataFile, keyForUser, loadData, readLegacyData, saveData, SyncState, syncUserData, upsertCheckin } from './lib/storage';
 import { getCurrentUser, signIn, signOut, signUp, User } from './lib/auth';
 import { Today } from './components/Today';
 import { Workout } from './components/Workout';
@@ -34,6 +34,7 @@ export default function App() {
   const [tab, setTab] = useState<Tab>('today');
   const [moreOpen, setMoreOpen] = useState(false);
   const [initialWorkout, setInitialWorkout] = useState<SessionType>('A_PUSH');
+  const [syncState, setSyncState] = useState<SyncState>('synced');
 
   useEffect(() => {
     if (!user) {
@@ -42,12 +43,29 @@ export default function App() {
       return;
     }
     setData(loadData(user.id));
+    setSyncState(hasPendingSync(user.id) ? 'pending' : 'synced');
   }, [user]);
 
   useEffect(() => {
     if (!user || !data) return;
     saveData(user.id, data);
+    setSyncState(navigator.onLine ? 'synced' : 'pending');
+    if (!navigator.onLine) enqueueOfflineChange(user.id, data);
   }, [user, data]);
+
+  useEffect(() => {
+    if (!user) return;
+    const runSync = async () => {
+      if (!navigator.onLine) return;
+      const result = await syncUserData(user.id);
+      setData(result.data);
+      setSyncState(result.state);
+    };
+    runSync();
+    const onOnline = () => runSync();
+    window.addEventListener('online', onOnline);
+    return () => window.removeEventListener('online', onOnline);
+  }, [user]);
 
   const canImportLegacy = useMemo(() => {
     if (!user || !readLegacyData()) return false;
@@ -143,6 +161,9 @@ export default function App() {
           </div>
         </div>
         <div className="headerActions">
+          <span className={`pill ${syncState === 'synced' ? 'pill-green' : syncState === 'pending' ? 'pill-yellow' : 'pill-red'}`}>
+            {syncState === 'synced' ? 'Sincronizado' : syncState === 'pending' ? 'Pendiente' : 'Error'}
+          </span>
           <button onClick={() => exportData(user.id, data)}>Exportar</button>
           <label className="importButton">Importar<input type="file" accept="application/json" onChange={(e) => importFile(e.target.files?.[0])} /></label>
         </div>
